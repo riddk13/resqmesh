@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import { Menu, ShieldAlert, Radio } from 'lucide-react';
@@ -9,53 +9,69 @@ import VictimsPage from './pages/VictimsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import DiagnosticsPage from './pages/DiagnosticsPage';
 
+// Default data: sirf tab use hoga jab localStorage mein kuch saved na ho
+const defaultAlerts = [
+  {
+    id: 'SOS-8091',
+    sender: 'Victim_81',
+    location: 'Sector 18 - Submerged Area',
+    status: 'CRITICAL',
+    medical: 'Injured Arm, Needs Boat Evacuation',
+    familyCount: 3,
+    hops: 3,
+    time: 'Just now',
+    coords: [28.6220, 77.2200]
+  },
+  {
+    id: 'SOS-8092',
+    sender: 'Victim_98',
+    location: 'Sector 18 - Submerged Area',
+    status: 'CRITICAL',
+    medical: 'Elderly Patient, High Water Level',
+    familyCount: 2,
+    hops: 2,
+    time: '2 mins ago',
+    coords: [28.6180, 77.2150]
+  },
+  {
+    id: 'SOS-8088',
+    sender: 'Victim_14',
+    location: 'Block C Shelter Base',
+    status: 'RESCUED',
+    medical: 'Safe at Shelter',
+    familyCount: 1,
+    hops: 0,
+    time: '15 mins ago',
+    coords: [28.6139, 77.2090]
+  },
+];
+
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [alerts, setAlerts] = useState([
-    { 
-      id: 'SOS-8091', 
-      sender: 'Victim_81', 
-      location: 'Sector 18 - Submerged Area', 
-      status: 'CRITICAL', 
-      medical: 'Injured Arm, Needs Boat Evacuation',
-      familyCount: 3,
-      hops: 3, 
-      time: 'Just now',
-      coords: [28.6220, 77.2200]
-    },
-    { 
-      id: 'SOS-8092', 
-      sender: 'Victim_98', 
-      location: 'Sector 18 - Submerged Area', 
-      status: 'CRITICAL', 
-      medical: 'Elderly Patient, High Water Level',
-      familyCount: 2,
-      hops: 2, 
-      time: '2 mins ago',
-      coords: [28.6180, 77.2150]
-    },
-    { 
-      id: 'SOS-8088', 
-      sender: 'Victim_14', 
-      location: 'Block C Shelter Base', 
-      status: 'RESCUED', 
-      medical: 'Safe at Shelter',
-      familyCount: 1,
-      hops: 0, 
-      time: '15 mins ago',
-      coords: [28.6139, 77.2090]
-    },
-  ]);
+  // Pehli baar load hone par localStorage se data padho, warna default use karo
+  const [alerts, setAlerts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('resqmesh-alerts');
+      return saved ? JSON.parse(saved) : defaultAlerts;
+    } catch (error) {
+      return defaultAlerts;
+    }
+  });
+
+  // Jab bhi alerts badle, automatically localStorage mein save karo
+  useEffect(() => {
+    localStorage.setItem('resqmesh-alerts', JSON.stringify(alerts));
+  }, [alerts]);
 
   return (
     <Router>
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-        
+
         {/* Top Sticky Header */}
         <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4 px-6 flex justify-between items-center sticky top-0 z-30">
           <div className="flex items-center space-x-4">
-            <button 
+            <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2.5 rounded-xl bg-slate-800 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700 transition cursor-pointer flex items-center space-x-2"
               title="Toggle Navigation Menu"
