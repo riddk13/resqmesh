@@ -1,20 +1,33 @@
 import React, { useState } from "react";
 import {
-  AlertTriangle,
   PlusCircle,
   MapPin,
-  ShieldCheck,
-  Radio,
-  Activity,
   Battery,
   User,
   X,
   Flame,
+  Crosshair,
+  Send,
 } from "lucide-react";
 import MapView from "../components/MapView";
 
+// Form khali hone par yahi default values hongi
+const emptyForm = {
+  sender: "",
+  location: "",
+  medical: "",
+  familyCount: 1,
+};
+
 export default function DashboardPage({ alerts, setAlerts }) {
   const [selectedVictim, setSelectedVictim] = useState(null);
+
+  // ---- Naye states: SOS form ke liye ----
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
+  const [coords, setCoords] = useState(null); // [lat, lng] ya null
+  const [geoStatus, setGeoStatus] = useState(""); // "", "loading", "success", "error"
+  const [formError, setFormError] = useState("");
 
   const playAlertSound = () => {
     try {
@@ -33,6 +46,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
     }
   };
 
+  // Purana random SOS (demo ke liye rakha hai, ab chhote button se chalega)
   const handleSimulateSOS = () => {
     playAlertSound();
     const randomId = `SOS-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -55,6 +69,74 @@ export default function DashboardPage({ alerts, setAlerts }) {
     setAlerts((prev) => [newAlert, ...prev]);
   };
 
+  // ---- Form kholna / band karna ----
+  const openForm = () => {
+    setFormData(emptyForm);
+    setCoords(null);
+    setGeoStatus("");
+    setFormError("");
+    setShowForm(true);
+  };
+
+  const closeForm = () => setShowForm(false);
+
+  // Input change handler: har field ke liye ek hi function
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ---- Geolocation API se asli location lena ----
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoStatus("error");
+      return;
+    }
+    setGeoStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords([
+          Number(position.coords.latitude.toFixed(5)),
+          Number(position.coords.longitude.toFixed(5)),
+        ]);
+        setGeoStatus("success");
+      },
+      () => {
+        // User ne permission nahi di ya location nahi mili
+        setGeoStatus("error");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
+  // ---- Form submit: naya SOS banao ----
+  const handleSubmitSOS = (e) => {
+    e.preventDefault();
+
+    if (!formData.sender.trim()) {
+      setFormError("Naam likhna zaroori hai.");
+      return;
+    }
+
+    playAlertSound();
+
+    const newAlert = {
+      id: `SOS-${Math.floor(1000 + Math.random() * 9000)}`,
+      sender: formData.sender.trim(),
+      location: formData.location.trim() || "Location not specified",
+      status: "CRITICAL",
+      medical: formData.medical.trim() || "Emergency Rescue Required",
+      familyCount: Number(formData.familyCount) || 1,
+      hops: 0,
+      time: "Just now",
+      // Agar user ne location nahi li, to Delhi ke paas default point use hoga
+      coords: coords || [28.6139, 77.209],
+    };
+
+    setAlerts((prev) => [newAlert, ...prev]);
+    setShowForm(false);
+  };
+
   const updateStatus = (id, newStatus) => {
     setAlerts(
       alerts.map((item) =>
@@ -66,22 +148,16 @@ export default function DashboardPage({ alerts, setAlerts }) {
     }
   };
 
-  const criticalCount = alerts.filter((a) => a.status === "CRITICAL").length;
-  const rescuedCount = alerts.filter((a) => a.status === "RESCUED").length;
-
   return (
     <div className="p-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
-      {/* High-Tech Tactical Hero Banner with Embedded SVG Pattern */}
       {/* High-Tech Visual Hero Banner with Image Background */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-700 shadow-2xl bg-slate-900 min-h-[220px] flex items-center">
-        {/* Rescue Helicopter Background Image */}
         <img
           src="/banner.jpg"
           alt="Rescue Command Banner"
           className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
         />
 
-        {/* Light Dark Gradient Overlay for Text Readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/20" />
 
         <div className="relative z-10 p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full">
@@ -105,13 +181,24 @@ export default function DashboardPage({ alerts, setAlerts }) {
             </p>
           </div>
 
-          <button
-            onClick={handleSimulateSOS}
-            className="flex items-center justify-center space-x-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 active:scale-95 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer shadow-xl shadow-red-950/80 border border-red-400/40 shrink-0"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Broadcast SOS Alert</span>
-          </button>
+          <div className="flex flex-col items-stretch gap-2 shrink-0">
+            {/* Ab ye button form kholta hai */}
+            <button
+              onClick={openForm}
+              className="flex items-center justify-center space-x-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 active:scale-95 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer shadow-xl shadow-red-950/80 border border-red-400/40"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Broadcast SOS Alert</span>
+            </button>
+
+            {/* Purana random demo button */}
+            <button
+              onClick={handleSimulateSOS}
+              className="text-[11px] text-slate-300 hover:text-white underline underline-offset-4 cursor-pointer"
+            >
+              Simulate random SOS (demo)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -180,6 +267,113 @@ export default function DashboardPage({ alerts, setAlerts }) {
           </div>
         </div>
       </div>
+
+      {/* ---------- SOS Form Modal (naya) ---------- */}
+      {showForm && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <form
+            onSubmit={handleSubmitSOS}
+            className="bg-slate-900 border border-slate-700 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative"
+          >
+            <button
+              type="button"
+              onClick={closeForm}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold text-white">Broadcast SOS Alert</h3>
+
+            {/* Naam */}
+            <div className="space-y-1">
+              <label className="text-xs text-slate-400">Name *</label>
+              <input
+                name="sender"
+                value={formData.sender}
+                onChange={handleChange}
+                placeholder="e.g.: Rahul Sharma"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
+              />
+            </div>
+
+            {/* Location (text) */}
+            <div className="space-y-1">
+              <label className="text-xs text-slate-400">Location / Area</label>
+              <input
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g: Sector 18 - Near Bridge"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
+              />
+            </div>
+
+            {/* Medical need */}
+            <div className="space-y-1">
+              <label className="text-xs text-slate-400">Medical / Rescue Need</label>
+              <input
+                name="medical"
+                value={formData.medical}
+                onChange={handleChange}
+                placeholder="e.g: Injured leg, needs boat"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
+              />
+            </div>
+
+            {/* Family size */}
+            <div className="space-y-1">
+              <label className="text-xs text-slate-400">Family Members</label>
+              <input
+                type="number"
+                min="1"
+                name="familyCount"
+                value={formData.familyCount}
+                onChange={handleChange}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
+              />
+            </div>
+
+            {/* Geolocation button */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                className="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 text-xs font-bold py-2.5 rounded-lg cursor-pointer"
+              >
+                <Crosshair className="w-4 h-4 text-indigo-300" />
+                <span>
+                  {geoStatus === "loading"
+                    ? "Searching location..."
+                    : "Send my real location"}
+                </span>
+              </button>
+
+              {geoStatus === "success" && coords && (
+                <p className="text-xs text-emerald-400 font-mono">
+                  Location found: {coords[0]}, {coords[1]}
+                </p>
+              )}
+              {geoStatus === "error" && (
+                <p className="text-xs text-amber-400">
+                  Location not found (Location permission is disabled or 
+                  the browser does not support it.) The default point will be used.
+                </p>
+              )}
+            </div>
+
+            {formError && <p className="text-xs text-red-400">{formError}</p>}
+
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              <span>Send SOS</span>
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Victim Inspector Modal */}
       {selectedVictim && (
