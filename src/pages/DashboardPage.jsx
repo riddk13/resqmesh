@@ -300,7 +300,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 name="sender"
                 value={formData.sender}
                 onChange={handleChange}
-                placeholder="Jaise: Rahul Sharma"
+                placeholder="e.g: Rahul Sharma"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -312,7 +312,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="Jaise: Sector 18 - Near Bridge"
+                placeholder="e.g: Sector 18 - Near Bridge"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -352,20 +352,20 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 <Crosshair className="w-4 h-4 text-indigo-300" />
                 <span>
                   {geoStatus === "loading"
-                    ? "Location dhoondh raha hoon..."
-                    : "Meri asli location use karo"}
+                    ? "Location searching..."
+                    : "Use my real location"}
                 </span>
               </button>
 
               {geoStatus === "success" && coords && (
                 <p className="text-xs text-emerald-400 font-mono">
-                  Location mil gayi: {coords[0]}, {coords[1]}
+                  Location found: {coords[0]}, {coords[1]}
                 </p>
               )}
               {geoStatus === "error" && (
                 <p className="text-xs text-amber-400">
-                  Location nahi mil payi (permission band hai ya browser support
-                  nahi karta). Default point use hoga.
+                  Location could not be detected 
+                  (location permission is disabled or the browser does not support it). The default point will be used.
                 </p>
               )}
             </div>
