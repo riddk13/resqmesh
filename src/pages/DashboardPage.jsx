@@ -148,6 +148,14 @@ export default function DashboardPage({ alerts, setAlerts }) {
     }
   };
 
+  // Priority sorting: CRITICAL upar, RESCUED neeche.
+  // Ek hi status ke andar order same rehta hai (naya SOS pehle), kyunki sort() stable hai.
+  // Original `alerts` ko nahi badalte (copy banate hain), taaki map aur localStorage par asar na pade.
+  const statusRank = (status) => (status === "CRITICAL" ? 0 : 1);
+  const sortedAlerts = [...alerts].sort(
+    (a, b) => statusRank(a.status) - statusRank(b.status),
+  );
+
   return (
     <div className="p-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
       {/* High-Tech Visual Hero Banner with Image Background */}
@@ -212,7 +220,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
           </h2>
 
           <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-            {alerts.map((alert) => (
+            {sortedAlerts.map((alert) => (
               <div
                 key={alert.id}
                 onClick={() => setSelectedVictim(alert)}
@@ -287,12 +295,12 @@ export default function DashboardPage({ alerts, setAlerts }) {
 
             {/* Naam */}
             <div className="space-y-1">
-              <label className="text-xs text-slate-400">Name *</label>
+              <label className="text-xs text-slate-400">Naam *</label>
               <input
                 name="sender"
                 value={formData.sender}
                 onChange={handleChange}
-                placeholder="e.g.: Rahul Sharma"
+                placeholder="Jaise: Rahul Sharma"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -304,7 +312,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="e.g: Sector 18 - Near Bridge"
+                placeholder="Jaise: Sector 18 - Near Bridge"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -316,7 +324,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 name="medical"
                 value={formData.medical}
                 onChange={handleChange}
-                placeholder="e.g: Injured leg, needs boat"
+                placeholder="Jaise: Injured leg, needs boat"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -344,20 +352,20 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 <Crosshair className="w-4 h-4 text-indigo-300" />
                 <span>
                   {geoStatus === "loading"
-                    ? "Searching location..."
-                    : "Send my real location"}
+                    ? "Location dhoondh raha hoon..."
+                    : "Meri asli location use karo"}
                 </span>
               </button>
 
               {geoStatus === "success" && coords && (
                 <p className="text-xs text-emerald-400 font-mono">
-                  Location found: {coords[0]}, {coords[1]}
+                  Location mil gayi: {coords[0]}, {coords[1]}
                 </p>
               )}
               {geoStatus === "error" && (
                 <p className="text-xs text-amber-400">
-                  Location not found (Location permission is disabled or 
-                  the browser does not support it.) The default point will be used.
+                  Location nahi mil payi (permission band hai ya browser support
+                  nahi karta). Default point use hoga.
                 </p>
               )}
             </div>

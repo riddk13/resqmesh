@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
 // Custom Map Marker Icons using SVG Strings
@@ -22,6 +22,34 @@ const createCustomIcon = (color) => {
 const redIcon = createCustomIcon('#DC2626');   // SOS Victims
 const greenIcon = createCustomIcon('#16A34A'); // Relay / Gateway Nodes
 
+// Naya component: jab bhi list mein naya SOS aaye, map us par ud ke chala jaye.
+// Ye MapContainer ke ANDAR hona zaroori hai, tabhi useMap() kaam karta hai.
+function FlyToNewestAlert({ alerts }) {
+  const map = useMap();
+  const lastSeenId = useRef(null);
+
+  useEffect(() => {
+    if (!alerts || alerts.length === 0) return;
+
+    // Naya SOS hamesha list mein sabse pehle jodta hai (DashboardPage mein [newAlert, ...prev])
+    const newest = alerts[0];
+
+    // Pehli baar page load hone par map ko hilana nahi hai, sirf id yaad rakho
+    if (lastSeenId.current === null) {
+      lastSeenId.current = newest.id;
+      return;
+    }
+
+    // Agar sabse upar wala alert badal gaya, matlab naya SOS aaya hai
+    if (newest.id !== lastSeenId.current) {
+      lastSeenId.current = newest.id;
+      map.flyTo(newest.coords, 14, { duration: 1.5 });
+    }
+  }, [alerts, map]);
+
+  return null; // Ye component kuch dikhata nahi, sirf map ko control karta hai
+}
+
 export default function MapView({ alerts }) {
   // Center coordinates (Default: New Delhi)
   const defaultCenter = [28.6139, 77.2090];
@@ -35,10 +63,10 @@ export default function MapView({ alerts }) {
 
   return (
     <div className="w-full h-[450px] rounded-lg overflow-hidden border border-slate-700 relative z-0">
-      <MapContainer 
-        center={defaultCenter} 
-        zoom={13} 
-        scrollWheelZoom={true} 
+      <MapContainer
+        center={defaultCenter}
+        zoom={13}
+        scrollWheelZoom={true}
         className="w-full h-full"
       >
         {/* Free OpenStreetMap Layer (No API Key Required) */}
@@ -47,17 +75,20 @@ export default function MapView({ alerts }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        {/* Naya SOS aane par map us jagah le jao */}
+        <FlyToNewestAlert alerts={alerts} />
+
         {/* Multi-Hop Mesh Line */}
-        <Polyline 
-          positions={meshRoute} 
-          pathOptions={{ color: '#2563EB', weight: 3, dashArray: '6, 6' }} 
+        <Polyline
+          positions={meshRoute}
+          pathOptions={{ color: '#2563EB', weight: 3, dashArray: '6, 6' }}
         />
 
         {/* SOS Alert Markers */}
         {alerts.map((alert) => (
-          <Marker 
-            key={alert.id} 
-            position={alert.coords} 
+          <Marker
+            key={alert.id}
+            position={alert.coords}
             icon={alert.status === 'CRITICAL' ? redIcon : greenIcon}
           >
             <Popup>
