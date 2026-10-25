@@ -10,6 +10,8 @@ import {
   Send,
 } from "lucide-react";
 import MapView from "../components/MapView";
+import { teams } from "../data/teams";
+import { findNearestTeam } from "../utils/geo";
 
 // Form khali hone par yahi default values hongi
 const emptyForm = {
@@ -25,8 +27,8 @@ export default function DashboardPage({ alerts, setAlerts }) {
   // ---- Naye states: SOS form ke liye ----
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
-  const [coords, setCoords] = useState(null); // [lat, lng] ya null
-  const [geoStatus, setGeoStatus] = useState(""); // "", "loading", "success", "error"
+  const [coords, setCoords] = useState(null); 
+  const [geoStatus, setGeoStatus] = useState(""); 
   const [formError, setFormError] = useState("");
 
   const playAlertSound = () => {
@@ -155,6 +157,11 @@ export default function DashboardPage({ alerts, setAlerts }) {
   const sortedAlerts = [...alerts].sort(
     (a, b) => statusRank(a.status) - statusRank(b.status),
   );
+
+  // Jo victim popup mein khula hai, uske liye sabse paas wali available team nikalo
+  const nearest = selectedVictim
+    ? findNearestTeam(selectedVictim.coords, teams)
+    : null;
 
   return (
     <div className="p-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
@@ -324,7 +331,7 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 name="medical"
                 value={formData.medical}
                 onChange={handleChange}
-                placeholder="Jaise: Injured leg, needs boat"
+                placeholder="e.g: Injured leg, needs boat"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-red-500"
               />
             </div>
@@ -364,8 +371,8 @@ export default function DashboardPage({ alerts, setAlerts }) {
               )}
               {geoStatus === "error" && (
                 <p className="text-xs text-amber-400">
-                  Location could not be detected 
-                  (location permission is disabled or the browser does not support it). The default point will be used.
+                 Location could not be detected 
+                 (location permission is disabled or the browser does not support it). The default point will be used.
                 </p>
               )}
             </div>
@@ -441,6 +448,22 @@ export default function DashboardPage({ alerts, setAlerts }) {
                 </span>
               </div>
             </div>
+
+            {/* Nearest rescue team (Haversine distance se) */}
+            {selectedVictim.status !== "RESCUED" && nearest && (
+              <div className="text-xs bg-indigo-950/40 p-4 rounded-xl border border-indigo-500/40 space-y-1">
+                <p className="text-indigo-300 font-bold uppercase tracking-wider text-[10px]">
+                  Nearest Available Team
+                </p>
+                <p className="text-white font-bold text-sm">{nearest.team.name}</p>
+                <p className="text-slate-300">
+                  {nearest.distanceKm.toFixed(1)} km door · {nearest.team.vehicle}
+                </p>
+                <p className="text-slate-400">
+                  Status: {nearest.team.status} · Base: {nearest.team.location}
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               {selectedVictim.status !== "RESCUED" ? (

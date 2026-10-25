@@ -1,13 +1,8 @@
 import React from 'react';
 import { Package, Shield, Anchor, Heart, Truck } from 'lucide-react';
+import { teams } from '../data/teams';
 
 export default function ResourcesPage() {
-  const teams = [
-    { name: 'NDRF Unit 04', status: 'Deployed', location: 'Sector 14 Bridge', vehicle: 'Motorboat (2)' },
-    { name: 'Medical Team B', status: 'Standby', location: 'Control Base', vehicle: 'Ambulance (1)' },
-    { name: 'Local Volunteers', status: 'Active', location: 'Market Complex', vehicle: 'On Foot' },
-  ];
-
   return (
     <div className="p-6 flex-1 bg-slate-900 text-slate-100 flex flex-col space-y-6">
       <div>
